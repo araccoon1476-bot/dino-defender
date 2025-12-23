@@ -1,0 +1,3554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Dino Defender - Dual Worlds</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght:700;900&family=Audiowide&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: radial-gradient(ellipse at center, #1a0033 0%, #000000 100%);
+            overflow: hidden;
+        }
+        
+        body.world2 {
+            background: radial-gradient(ellipse at center, #330a00 0%, #000000 100%);
+        }
+        
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        body.world2 .star {
+            background: #ffaa00;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        #ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+            font-size: 18px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        
+        body.world2 #ui {
+            color: #ff8800;
+            text-shadow: 0 0 10px #ff8800;
+        }
+        
+        #startScreen, #instructionsScreen, #gameOver, #worldComplete {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            color: #00ff88;
+        }
+        
+        #instructionsScreen, #gameOver, #worldComplete {
+            display: none;
+        }
+        
+        body.world2 #startScreen,
+        body.world2 #instructionsScreen,
+        body.world2 #gameOver,
+        body.world2 #worldComplete {
+            color: #ff8800;
+        }
+        
+        h1 {
+            font-family: 'Audiowide', cursive;
+            font-size: 72px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        body.world2 h1 {
+            text-shadow: 0 0 20px #ff8800, 0 0 40px #ff8800;
+        }
+        
+        h2 {
+            font-family: 'Audiowide', cursive;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ff88;
+        }
+        
+        body.world2 h2 {
+            text-shadow: 0 0 20px #ff8800;
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
+            50% { text-shadow: 0 0 30px currentColor, 0 0 60px currentColor, 0 0 80px currentColor; }
+        }
+        
+        .dinoClass {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            padding: 20px 40px;
+            margin: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            color: #00ff88;
+            text-transform: uppercase;
+            pointer-events: all;
+        }
+        
+        .dinoClass.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+            background: rgba(100, 100, 100, 0.1);
+            pointer-events: none;
+        }
+        
+        .dinoClass.locked:hover {
+            background: rgba(100, 100, 100, 0.2);
+            transform: none;
+            box-shadow: none;
+        }
+        
+        body.world2 .dinoClass {
+            background: rgba(255, 136, 0, 0.1);
+            border: 2px solid #ff8800;
+            color: #ff8800;
+        }
+        
+        body.world2 .dinoClass.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+            background: rgba(100, 100, 100, 0.1);
+            pointer-events: none;
+        }
+        
+        .dinoClass:hover {
+            background: rgba(0, 255, 136, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #00ff88;
+        }
+        
+        body.world2 .dinoClass:hover {
+            background: rgba(255, 136, 0, 0.3);
+            box-shadow: 0 0 30px #ff8800;
+        }
+        
+        .stats {
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
+        .trait {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+            font-size: 13px;
+        }
+        
+        .golden-stat {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+            font-weight: bold;
+        }
+        
+        button {
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 15px 40px;
+            font-family: 'Orbitron', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            pointer-events: all;
+        }
+        
+        body.world2 button {
+            background: rgba(255, 136, 0, 0.2);
+            border: 2px solid #ff8800;
+            color: #ff8800;
+        }
+        
+        button:hover {
+            background: rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 20px #00ff88;
+        }
+        
+        body.world2 button:hover {
+            background: rgba(255, 136, 0, 0.4);
+            box-shadow: 0 0 20px #ff8800;
+        }
+        
+        #superMeter {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff88;
+            z-index: 10;
+            overflow: hidden;
+        }
+        
+        body.world2 #superMeter {
+            border: 2px solid #ff8800;
+        }
+        
+        #superFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff88, #00ffff);
+            box-shadow: 0 0 20px #00ff88;
+            transition: width 0.1s;
+        }
+        
+        body.world2 #superFill {
+            background: linear-gradient(90deg, #ff8800, #ffff00);
+            box-shadow: 0 0 20px #ff8800;
+        }
+        
+        #superText {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff88;
+            font-size: 16px;
+            z-index: 10;
+            text-shadow: 0 0 10px #00ff88;
+            text-align: center;
+        }
+        
+        body.world2 #superText {
+            color: #ff8800;
+            text-shadow: 0 0 10px #ff8800;
+        }
+        
+        .instructions {
+            max-width: 800px;
+            text-align: left;
+            line-height: 1.8;
+            font-size: 18px;
+        }
+        
+        .instruction-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 3px solid #00ff88;
+        }
+        
+        body.world2 .instruction-item {
+            background: rgba(255, 136, 0, 0.1);
+            border-left: 3px solid #ff8800;
+        }
+        
+        #bossWarning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000;
+            z-index: 50;
+            display: none;
+            font-family: 'Audiowide', cursive;
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        #worldIndicator {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+            z-index: 10;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        
+        body.world2 #worldIndicator {
+            color: #ff8800;
+            text-shadow: 0 0 10px #ff8800;
+        }
+        
+        #traitIndicator {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: 14px;
+            z-index: 10;
+            text-shadow: 0 0 10px #ffd700;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="starfield"></div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="worldIndicator">WORLD 1: SPACE</div>
+    
+    <div id="codeButton" onclick="openCodeMachine()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; border-radius: 50%; color: #00ff88; font-size: 28px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.3s; pointer-events: all;">🔓</div>
+    
+    <div id="codeModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center; z-index: 200;">
+        <div class="code-machine" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 3px solid #00ff88; border-radius: 20px; padding: 40px; box-shadow: 0 0 50px rgba(0, 255, 136, 0.5); max-width: 500px; width: 90%;">
+            <h2 style="text-align: center; margin-bottom: 20px;">🔓 CODE MACHINE 🔓</h2>
+            <div id="codeDisplay" style="background: #000; border: 2px solid #00ff88; padding: 20px; font-size: 36px; text-align: center; letter-spacing: 10px; margin: 20px 0; min-height: 60px; color: #00ff88; text-shadow: 0 0 10px #00ff88; font-family: 'Orbitron', monospace;">----</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0;">
+                <button class="code-key" onclick="enterDigit('1')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">1</button>
+                <button class="code-key" onclick="enterDigit('2')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">2</button>
+                <button class="code-key" onclick="enterDigit('3')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">3</button>
+                <button class="code-key" onclick="enterDigit('4')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">4</button>
+                <button class="code-key" onclick="enterDigit('5')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">5</button>
+                <button class="code-key" onclick="enterDigit('6')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">6</button>
+                <button class="code-key" onclick="enterDigit('7')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">7</button>
+                <button class="code-key" onclick="enterDigit('8')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">8</button>
+                <button class="code-key" onclick="enterDigit('9')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">9</button>
+                <button class="code-key" onclick="clearCode()" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">CLR</button>
+                <button class="code-key" onclick="enterDigit('0')" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">0</button>
+                <button class="code-key" onclick="submitCode()" style="background: rgba(0, 255, 136, 0.2); border: 2px solid #00ff88; color: #00ff88; padding: 20px; font-size: 24px; font-family: 'Orbitron', monospace; cursor: pointer; transition: all 0.3s; pointer-events: all;">✓</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="closeCodeMachine()" style="flex: 1; padding: 15px;">CANCEL</button>
+            </div>
+            <div id="codeHint" style="text-align: center; margin-top: 20px; color: #ffd700; font-size: 14px; text-shadow: 0 0 10px #ffd700;">
+                💡 Hint: Four 4's will make you never miss! 🔫
+            </div>
+            <div id="codeMessage" style="text-align: center; margin-top: 20px; min-height: 30px; font-size: 18px; color: #00ff88; text-shadow: 0 0 10px #00ff88;"></div>
+        </div>
+    </div>
+    
+    <div id="ui">
+        <div>
+            <div>SCORE: <span id="score">0</span></div>
+            <div>HEALTH: <span id="health">100</span></div>
+        </div>
+        <div id="waveInfo" style="text-align: right;">
+            <div>NEXT BOSS: <span id="nextBoss">1000</span></div>
+            <div>ENEMIES: <span id="enemies">0</span></div>
+        </div>
+    </div>
+    
+    <div id="bossWarning">⚠️ BOSS INCOMING ⚠️</div>
+    
+    <div id="traitIndicator">⭐ TRAIT ACTIVE</div>
+    <div id="superText">SUPER MOVE READY!</div>
+    <div id="superMeter">
+        <div id="superFill"></div>
+    </div>
+    
+    <div id="startScreen">
+        <h1>SPACE DINO DEFENDER</h1>
+        <p style="margin-bottom: 30px; font-size: 20px;" id="dinoSetTitle">Choose Your Dinosaur Class - World 1</p>
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 30px;">
+            <button id="prevDinoSet" onclick="previousDinoSet()" style="font-size: 40px; padding: 10px 30px;">◀</button>
+            
+            <div id="dinoContainer" style="display: flex; flex-direction: column;">
+                <div id="world1Dinos">
+                    <div class="dinoClass" onclick="selectDino('trex')">
+                        <div style="font-size: 24px;">🦖 T-REX</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️❤️ | Damage: 💥💥💥💥💥 | Fire Rate: ⚡⚡
+                            <br>Super: METEOR STRIKE
+                        </div>
+                    </div>
+                    <div class="dinoClass" onclick="selectDino('raptor')">
+                        <div style="font-size: 24px;">🦅 RAPTOR</div>
+                        <div class="stats">
+                            Health: ❤️❤️ | Damage: 💥💥💥 | Fire Rate: ⚡⚡⚡⚡⚡
+                            <br>Super: SPEED BLITZ
+                        </div>
+                    </div>
+                    <div class="dinoClass" onclick="selectDino('triceratops')">
+                        <div style="font-size: 24px;">🦏 TRICERATOPS</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️❤️❤️ | Damage: 💥💥💥 | Fire Rate: ⚡⚡⚡
+                            <br>Super: SHIELD BURST
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="world1SecretDinos" style="display: none;">
+                    <div style="text-align: center; font-size: 28px; color: #ffd700; text-shadow: 0 0 20px #ffd700; margin-bottom: 20px;">
+                        ⭐ WORLD 1 SECRET DINOS ⭐
+                    </div>
+                    <div class="dinoClass locked" id="brachioCard">
+                        <div style="font-size: 24px;" id="brachioTitle">🔒 BRACHIOSAURUS</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️ | <span class="golden-stat">Damage: 💥💥💥💥💥💥💥⭐</span> | Fire Rate: ⚡⚡
+                            <br>Super: NECK SLASH
+                            <div class="trait">⭐ Secret Dino - Tall sauropod with powerful attacks</div>
+                            <div style="margin-top: 10px; color: #ffd700; font-size: 16px;" id="brachioLock">🔒 LOCKED - Beat World 1 Boss to unlock!</div>
+                        </div>
+                    </div>
+                    <div class="dinoClass locked" id="spinoCard">
+                        <div style="font-size: 24px;" id="spinoTitle">🔒 SPINOSAURUS</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️❤️ | Damage: 💥💥💥💥 | <span class="golden-stat">Fire Rate: ⚡⭐BEAM</span>
+                            <br>Super: LASER BEAM
+                            <div class="trait">⭐ Secret Dino - Powerful beam attack from spine sail</div>
+                            <div style="margin-top: 10px; color: #ffd700; font-size: 16px;" id="spinoLock">🔒 LOCKED - Kill 2 Elite Enemies to unlock!</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="world2Dinos" style="display: none;">
+                    <div class="dinoClass locked" id="alloCard">
+                        <div style="font-size: 24px;">🔒 ALLOSAURUS</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️❤️❤️ | <span class="golden-stat">Damage: 💥💥💥💥💥💥⭐</span> | Fire Rate: ⚡⚡⚡
+                            <br>Super: EARTHQUAKE STOMP
+                            <div class="trait">⭐ Trait: APEX PREDATOR - Deals 50% more damage to Elites & Bosses</div>
+                            <div style="margin-top: 10px; color: #ff0000; font-size: 16px;">🔒 LOCKED - Reach World 2 to unlock!</div>
+                        </div>
+                    </div>
+                    <div class="dinoClass locked" id="diloCard">
+                        <div style="font-size: 24px;">🔒 DILOPHOSAURUS</div>
+                        <div class="stats">
+                            Health: ❤️❤️❤️ | Damage: 💥💥💥💥 | <span class="golden-stat">Fire Rate: ⚡⚡⚡⚡⚡⚡⭐</span>
+                            <br>Super: VENOM STORM
+                            <div class="trait">⭐ Trait: TOXIC SPIT - Enemies take damage over time (poison)</div>
+                            <div style="margin-top: 10px; color: #ff0000; font-size: 16px;">🔒 LOCKED - Reach World 2 to unlock!</div>
+                        </div>
+                    </div>
+                    <div class="dinoClass locked" id="ankyCard">
+                        <div style="font-size: 24px;">🔒 ANKYLOSAURUS</div>
+                        <div class="stats">
+                            <span class="golden-stat">Health: ❤️❤️❤️❤️❤️❤️❤️⭐</span> | Damage: 💥💥💥💥 | Fire Rate: ⚡⚡
+                            <br>Super: ARMOR NOVA
+                            <div class="trait">⭐ Trait: HEAVY ARMOR - Takes 30% less damage from all sources</div>
+                            <div style="margin-top: 10px; color: #ff0000; font-size: 16px;">🔒 LOCKED - Reach World 2 to unlock!</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="secretDinos" style="display: none;">
+                    <div style="text-align: center; font-size: 28px; color: #00ffff; text-shadow: 0 0 20px #00ffff; margin-bottom: 20px;">
+                        🤖 SECRET DINO UNLOCKED! 🤖
+                    </div>
+                    <div class="dinoClass locked" id="roboCard">
+                        <div style="font-size: 24px;">🔒 ROBO DINO</div>
+                        <div class="stats">
+                            <span class="golden-stat">Health: ❤️❤️❤️❤️❤️❤️❤️❤️⭐MAX</span> | <span class="golden-stat">Damage: 💥💥💥💥💥💥💥💥⭐MAX</span> | <span class="golden-stat">Fire Rate: ⚡⚡⚡⚡⚡⚡⚡⚡⭐MAX</span>
+                            <br>Super: TRIPLE BEAM BARRAGE
+                            <div class="trait">⭐ Trait: TRIPLE SPINE BEAM - Fires 3 powerful beams simultaneously from spine and shoulders!</div>
+                            <div style="margin-top: 10px; color: #00ffff; font-size: 16px;">🔒 LOCKED - Defeat World 2 Boss to unlock!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="nextDinoSet" onclick="nextDinoSet()" style="font-size: 40px; padding: 10px 30px;">▶</button>
+        </div>
+    </div>
+    
+    <div id="instructionsScreen">
+        <h2>HOW TO PLAY</h2>
+        <div class="instructions">
+            <div class="instruction-item">
+                <strong>MOVEMENT:</strong> Use A/D or LEFT/RIGHT arrow keys to move horizontally
+            </div>
+            <div class="instruction-item">
+                <strong>SHOOT:</strong> Press SPACEBAR to fire at aliens
+            </div>
+            <div class="instruction-item">
+                <strong>SUPER MOVE:</strong> Press SHIFT when meter is full for your ultimate ability
+            </div>
+            <div class="instruction-item">
+                <strong>OBJECTIVE:</strong> Destroy aliens and earn points! Boss appears at 1000 points. Beat the boss to unlock World 2!
+            </div>
+            <div class="instruction-item">
+                <strong>SCORING:</strong> Regular Alien = 100 points | Elite = 200 points | Boss = 500 points
+            </div>
+            <div class="instruction-item">
+                <strong>POWER-UPS:</strong> Floating stars spawn from above! Collect them for:
+                <br>🛡️ Shield (blue) | ⚡ Triple Shot (pink) | ⚡ Rapid Fire (orange) | ⭐ Mega Power - ALL THREE! (gold/rare)
+            </div>
+            <div class="instruction-item">
+                <strong>WORLDS:</strong> World 1 = Space (Green aliens) | World 2 = Lava Planet (Red demons) - HARDER!
+            </div>
+        </div>
+        <button onclick="startGame()">START MISSION</button>
+    </div>
+    
+    <div id="worldComplete">
+        <h1>WORLD COMPLETE!</h1>
+        <p style="font-size: 32px; margin: 20px 0;">SCORE: <span id="worldScore">0</span></p>
+        <p style="font-size: 24px; margin: 20px 0;">🎉 WORLD 2 UNLOCKED! 🎉</p>
+        <button onclick="startWorld2()">ENTER WORLD 2: LAVA PLANET</button>
+        <button onclick="location.reload()">RETURN TO MAIN MENU</button>
+    </div>
+    
+    <div id="gameOver">
+        <h1>MISSION COMPLETE</h1>
+        <p style="font-size: 32px; margin: 20px 0;">FINAL SCORE: <span id="finalScore">0</span></p>
+        <p style="font-size: 24px; margin: 20px 0;" id="gameOverMessage"></p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Create starfield
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starfield.appendChild(star);
+        }
+        
+        // Game state
+        let gameStarted = false;
+        let gameEnded = false;
+        let score = 0;
+        let superCharge = 0;
+        let bossSpawned = false;
+        let bossDefeated = false;
+        let elitesKilled = 0;
+        let lastEliteScore = 0;
+        let currentWorld = 1;
+        let world2Unlocked = false;
+        let currentDinoSet = 1; // 1 = World 1 dinos, 2 = World 1 Secrets, 3 = World 2, 4 = World 2 Secrets
+        let roboUnlocked = false;
+        let brachioUnlocked = false;
+        let spinoUnlocked = false;
+        
+        // Load saved progress
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem('spaceDinoProgress');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    world2Unlocked = data.world2Unlocked || false;
+                    roboUnlocked = data.roboUnlocked || false;
+                    brachioUnlocked = data.brachioUnlocked || false;
+                    spinoUnlocked = data.spinoUnlocked || false;
+                    
+                    // Apply unlocks to UI
+                    if (world2Unlocked) {
+                        document.getElementById('alloCard').classList.remove('locked');
+                        document.getElementById('diloCard').classList.remove('locked');
+                        document.getElementById('ankyCard').classList.remove('locked');
+                        document.getElementById('alloCard').onclick = function() { selectDino('allosaurus'); };
+                        document.getElementById('diloCard').onclick = function() { selectDino('dilophosaurus'); };
+                        document.getElementById('ankyCard').onclick = function() { selectDino('ankylosaurus'); };
+                    }
+                    
+                    if (roboUnlocked) {
+                        document.getElementById('roboCard').classList.remove('locked');
+                        document.getElementById('roboCard').onclick = function() { selectDino('robodino'); };
+                    }
+                    
+                    if (brachioUnlocked) {
+                        document.getElementById('brachioCard').classList.remove('locked');
+                        document.getElementById('brachioCard').onclick = function() { selectDino('brachiosaurus'); };
+                        document.getElementById('brachioLock').style.display = 'none';
+                        document.getElementById('brachioTitle').textContent = '🦕 BRACHIOSAURUS';
+                    }
+                    
+                    if (spinoUnlocked) {
+                        document.getElementById('spinoCard').classList.remove('locked');
+                        document.getElementById('spinoCard').onclick = function() { selectDino('spinosaurus'); };
+                        document.getElementById('spinoLock').style.display = 'none';
+                        document.getElementById('spinoTitle').textContent = '🦎 SPINOSAURUS';
+                    }
+                }
+            } catch (e) {
+                console.log('No saved progress');
+            }
+        }
+        
+        // Save progress
+        function saveProgress() {
+            try {
+                const data = {
+                    world2Unlocked: world2Unlocked,
+                    roboUnlocked: roboUnlocked,
+                    brachioUnlocked: brachioUnlocked,
+                    spinoUnlocked: spinoUnlocked
+                };
+                localStorage.setItem('spaceDinoProgress', JSON.stringify(data));
+            } catch (e) {
+                console.log('Could not save progress');
+            }
+        }
+        
+        // Load progress on page load
+        loadProgress();
+        
+        function nextDinoSet() {
+            if (currentDinoSet === 1 && (brachioUnlocked || spinoUnlocked)) {
+                // Go to World 1 Secrets if unlocked
+                currentDinoSet = 2;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'block';
+                document.getElementById('world2Dinos').style.display = 'none';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = '⭐ World 1 Secret Dinos ⭐';
+            } else if (currentDinoSet === 1) {
+                // Skip World 1 Secrets, go to World 2
+                currentDinoSet = 3;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'block';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 2';
+            } else if (currentDinoSet === 2) {
+                // From World 1 Secrets to World 2
+                currentDinoSet = 3;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'block';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 2';
+            } else if (currentDinoSet === 3 && roboUnlocked) {
+                // From World 2 to Robo Dino
+                currentDinoSet = 4;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'none';
+                document.getElementById('secretDinos').style.display = 'block';
+                document.getElementById('dinoSetTitle').textContent = '🤖 SECRET ROBO DINO 🤖';
+            }
+        }
+        
+        function previousDinoSet() {
+            if (currentDinoSet === 2) {
+                // From World 1 Secrets to World 1
+                currentDinoSet = 1;
+                document.getElementById('world1Dinos').style.display = 'block';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'none';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 1';
+            } else if (currentDinoSet === 3 && (brachioUnlocked || spinoUnlocked)) {
+                // From World 2 to World 1 Secrets
+                currentDinoSet = 2;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'block';
+                document.getElementById('world2Dinos').style.display = 'none';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = '⭐ World 1 Secret Dinos ⭐';
+            } else if (currentDinoSet === 3) {
+                // From World 2 to World 1 (skip secrets)
+                currentDinoSet = 1;
+                document.getElementById('world1Dinos').style.display = 'block';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'none';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 1';
+            } else if (currentDinoSet === 4) {
+                // From Robo Dino to World 2
+                currentDinoSet = 3;
+                document.getElementById('world1Dinos').style.display = 'none';
+                document.getElementById('world1SecretDinos').style.display = 'none';
+                document.getElementById('world2Dinos').style.display = 'block';
+                document.getElementById('secretDinos').style.display = 'none';
+                document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 2';
+            }
+        }
+        
+        window.nextDinoSet = nextDinoSet;
+        window.previousDinoSet = previousDinoSet;
+        
+        // Power-ups
+        let powerUps = [];
+        let hasShield = false;
+        let hasTripleShot = false;
+        let hasSpeedShot = false;
+        let hasStrength = false;
+        let hasRegen = false;
+        let powerUpTimer = 0;
+        let powerUpSpawnTimer = 0;
+        
+        // Boss
+        let boss = null;
+        let bossPhase = 1;
+        
+        // Poison effect tracking
+        let poisonedEnemies = new Map(); // Track enemies with poison DOT
+        
+        // Code machine state
+        let currentCode = '';
+        const CODE_LENGTH = 4;
+        
+        // Cheat codes
+        const CHEAT_CODES = {
+            '1476': () => {
+                // Unlock all World 2 dinos
+                world2Unlocked = true;
+                document.getElementById('alloCard').classList.remove('locked');
+                document.getElementById('diloCard').classList.remove('locked');
+                document.getElementById('ankyCard').classList.remove('locked');
+                document.getElementById('alloCard').onclick = function() { selectDino('allosaurus'); };
+                document.getElementById('diloCard').onclick = function() { selectDino('dilophosaurus'); };
+                document.getElementById('ankyCard').onclick = function() { selectDino('ankylosaurus'); };
+                
+                // Save progress
+                saveProgress();
+                
+                return '🦕 WORLD 2 DINOS UNLOCKED! 🦖';
+            },
+            '2222': () => {
+                // Unlock World 1 Secret Dinos
+                brachioUnlocked = true;
+                spinoUnlocked = true;
+                document.getElementById('brachioCard').classList.remove('locked');
+                document.getElementById('spinoCard').classList.remove('locked');
+                document.getElementById('brachioCard').onclick = function() { selectDino('brachiosaurus'); };
+                document.getElementById('spinoCard').onclick = function() { selectDino('spinosaurus'); };
+                document.getElementById('brachioLock').style.display = 'none';
+                document.getElementById('spinoLock').style.display = 'none';
+                document.getElementById('brachioTitle').textContent = '🦕 BRACHIOSAURUS';
+                document.getElementById('spinoTitle').textContent = '🦎 SPINOSAURUS';
+                
+                // Save progress
+                saveProgress();
+                
+                return '⭐ WORLD 1 SECRET DINOS UNLOCKED! ⭐';
+            },
+            '3333': () => {
+                // Unlock EVERYTHING - All dinos including all secrets
+                world2Unlocked = true;
+                roboUnlocked = true;
+                brachioUnlocked = true;
+                spinoUnlocked = true;
+                
+                // World 2 dinos
+                document.getElementById('alloCard').classList.remove('locked');
+                document.getElementById('diloCard').classList.remove('locked');
+                document.getElementById('ankyCard').classList.remove('locked');
+                document.getElementById('alloCard').onclick = function() { selectDino('allosaurus'); };
+                document.getElementById('diloCard').onclick = function() { selectDino('dilophosaurus'); };
+                document.getElementById('ankyCard').onclick = function() { selectDino('ankylosaurus'); };
+                
+                // Robo Dino
+                document.getElementById('roboCard').classList.remove('locked');
+                document.getElementById('roboCard').onclick = function() { selectDino('robodino'); };
+                
+                // World 1 Secret Dinos
+                document.getElementById('brachioCard').classList.remove('locked');
+                document.getElementById('spinoCard').classList.remove('locked');
+                document.getElementById('brachioCard').onclick = function() { selectDino('brachiosaurus'); };
+                document.getElementById('spinoCard').onclick = function() { selectDino('spinosaurus'); };
+                document.getElementById('brachioLock').style.display = 'none';
+                document.getElementById('spinoLock').style.display = 'none';
+                document.getElementById('brachioTitle').textContent = '🦕 BRACHIOSAURUS';
+                document.getElementById('spinoTitle').textContent = '🦎 SPINOSAURUS';
+                
+                // Save progress
+                saveProgress();
+                
+                return '🌟 ALL DINOS UNLOCKED! 🌟';
+            },
+            '1234': () => {
+                // Teleport to World 2
+                if (!gameStarted) {
+                    return '⚠️ START GAME FIRST!';
+                }
+                if (currentWorld === 2) {
+                    return '⚠️ ALREADY IN WORLD 2!';
+                }
+                
+                // Close modal and teleport
+                setTimeout(() => {
+                    closeCodeMachine();
+                    currentWorld = 2;
+                    world2Unlocked = true;
+                    document.body.classList.add('world2');
+                    document.getElementById('worldIndicator').textContent = 'WORLD 2: LAVA';
+                    
+                    // Unlock dinos
+                    document.getElementById('alloCard').classList.remove('locked');
+                    document.getElementById('diloCard').classList.remove('locked');
+                    document.getElementById('ankyCard').classList.remove('locked');
+                    document.getElementById('alloCard').onclick = function() { selectDino('allosaurus'); };
+                    document.getElementById('diloCard').onclick = function() { selectDino('dilophosaurus'); };
+                    document.getElementById('ankyCard').onclick = function() { selectDino('ankylosaurus'); };
+                    
+                    // Reset for world 2
+                    score = 0;
+                    superCharge = 0;
+                    bossSpawned = false;
+                    lastEliteScore = 0;
+                    bullets = [];
+                    enemies = [];
+                    particles = [];
+                    powerUps = [];
+                    boss = null;
+                    bossPhase = 1;
+                    
+                    // Heal player
+                    player.health = player.maxHealth;
+                    
+                    // Show notification
+                    const warning = document.getElementById('bossWarning');
+                    warning.textContent = '🌋 WELCOME TO LAVA PLANET! 🌋';
+                    warning.style.color = '#ff8800';
+                    warning.style.textShadow = '0 0 20px #ff8800';
+                    warning.style.display = 'block';
+                    setTimeout(() => {
+                        warning.textContent = '⚠️ BOSS INCOMING ⚠️';
+                        warning.style.color = '#ff0000';
+                        warning.style.textShadow = '0 0 20px #ff0000';
+                        warning.style.display = 'none';
+                    }, 3000);
+                }, 100);
+                
+                return '🌋 TELEPORTING TO WORLD 2! 🌋';
+            },
+            '9999': () => {
+                // God mode
+                if (player) {
+                    player.health = player.maxHealth * 10;
+                    player.maxHealth = player.maxHealth * 10;
+                    return '⭐ GOD MODE ACTIVATED!';
+                }
+                return '⚠️ START GAME FIRST!';
+            },
+            '5555': () => {
+                // Fill super meter
+                if (gameStarted) {
+                    superCharge = 100;
+                    return '⚡ SUPER CHARGED!';
+                }
+                return '⚠️ START GAME FIRST!';
+            },
+            '7777': () => {
+                // Add 1000 score
+                if (gameStarted) {
+                    score += 1000;
+                    return '💰 +1000 SCORE!';
+                }
+                return '⚠️ START GAME FIRST!';
+            },
+            '0000': () => {
+                // Reset game
+                location.reload();
+                return '🔄 RESETTING...';
+            },
+            '0001': () => {
+                // Clear all progress and reset
+                localStorage.removeItem('spaceDinoProgress');
+                location.reload();
+                return '🔄 PROGRESS CLEARED!';
+            },
+            '8888': () => {
+                // All power-ups
+                if (gameStarted) {
+                    hasShield = true;
+                    hasTripleShot = true;
+                    hasSpeedShot = true;
+                    powerUpTimer = 9999;
+                    return '⭐ ALL POWER-UPS ACTIVATED!';
+                }
+                return '⚠️ START GAME FIRST!';
+            },
+            '6666': () => {
+                // Instant win (kill all enemies)
+                if (gameStarted) {
+                    enemies.forEach(enemy => {
+                        createParticles(enemy.x, enemy.y, enemy.color, 20);
+                    });
+                    if (boss) {
+                        createParticles(boss.x, boss.y, boss.color, 50);
+                        boss = null;
+                    }
+                    enemies = [];
+                    score += 500;
+                    return '💥 SCREEN CLEARED!';
+                }
+                return '⚠️ START GAME FIRST!';
+            },
+            '4444': () => {
+                // Toggle auto-fire
+                autoFire = !autoFire;
+                if (autoFire) {
+                    return '🔫 AUTO-FIRE ENABLED!';
+                } else {
+                    return '🔫 AUTO-FIRE DISABLED!';
+                }
+            }
+        };
+        
+        function openCodeMachine() {
+            document.getElementById('codeModal').style.display = 'flex';
+            currentCode = '';
+            updateCodeDisplay();
+            document.getElementById('codeMessage').textContent = '';
+        }
+        
+        function closeCodeMachine() {
+            document.getElementById('codeModal').style.display = 'none';
+        }
+        
+        function enterDigit(digit) {
+            if (currentCode.length < CODE_LENGTH) {
+                currentCode += digit;
+                updateCodeDisplay();
+            }
+        }
+        
+        function clearCode() {
+            currentCode = '';
+            updateCodeDisplay();
+            document.getElementById('codeMessage').textContent = '';
+        }
+        
+        function updateCodeDisplay() {
+            const display = currentCode.padEnd(CODE_LENGTH, '-');
+            document.getElementById('codeDisplay').textContent = display;
+        }
+        
+        function submitCode() {
+            const messageElement = document.getElementById('codeMessage');
+            
+            if (currentCode.length !== CODE_LENGTH) {
+                messageElement.textContent = '⚠️ ENTER 4 DIGITS';
+                messageElement.style.color = '#ff0000';
+                return;
+            }
+            
+            if (CHEAT_CODES[currentCode]) {
+                const message = CHEAT_CODES[currentCode]();
+                messageElement.textContent = message;
+                messageElement.style.color = '#00ff00';
+                
+                // Auto-close after success
+                setTimeout(() => {
+                    closeCodeMachine();
+                }, 2000);
+            } else {
+                messageElement.textContent = '❌ INVALID CODE';
+                messageElement.style.color = '#ff0000';
+                
+                // Clear after error
+                setTimeout(() => {
+                    clearCode();
+                }, 1500);
+            }
+        }
+        
+        window.openCodeMachine = openCodeMachine;
+        window.closeCodeMachine = closeCodeMachine;
+        window.enterDigit = enterDigit;
+        window.clearCode = clearCode;
+        window.submitCode = submitCode;
+        
+        // Dino classes
+        const dinoClasses = {
+            // WORLD 1 DINOS
+            trex: {
+                health: 150,
+                maxHealth: 150,
+                damage: 30,
+                fireRate: 500,
+                color: '#ff4444',
+                secondaryColor: '#aa0000',
+                tertiaryColor: '#ff8888',
+                width: 90,
+                height: 100,
+                superMove: 'meteor',
+                attackType: 'bullet',
+                world: 1
+            },
+            raptor: {
+                health: 80,
+                maxHealth: 80,
+                damage: 15,
+                fireRate: 150,
+                color: '#ffaa00',
+                secondaryColor: '#cc6600',
+                tertiaryColor: '#ffdd66',
+                width: 70,
+                height: 80,
+                superMove: 'speedBlitz',
+                attackType: 'bullet',
+                world: 1
+            },
+            triceratops: {
+                health: 200,
+                maxHealth: 200,
+                damage: 20,
+                fireRate: 300,
+                color: '#4444ff',
+                secondaryColor: '#0000aa',
+                tertiaryColor: '#8888ff',
+                width: 100,
+                height: 85,
+                superMove: 'shieldBurst',
+                attackType: 'bullet',
+                world: 1
+            },
+            
+            // WORLD 1 SECRET DINOS
+            brachiosaurus: {
+                health: 120,
+                maxHealth: 120,
+                damage: 40,
+                fireRate: 700,
+                color: '#44ff44',
+                secondaryColor: '#228822',
+                tertiaryColor: '#88ff88',
+                width: 80,
+                height: 120,
+                superMove: 'neckSlash',
+                attackType: 'bullet',
+                world: 1,
+                isSecret: true
+            },
+            spinosaurus: {
+                health: 160,
+                maxHealth: 160,
+                damage: 25,
+                fireRate: 4000,
+                color: '#9933ff',
+                secondaryColor: '#6600cc',
+                tertiaryColor: '#cc66ff',
+                width: 95,
+                height: 110,
+                superMove: 'laserBeam',
+                attackType: 'bullet',
+                world: 1,
+                isSecret: true
+            },
+            
+            // WORLD 2 DINOS - ENHANCED!
+            allosaurus: {
+                health: 180,
+                maxHealth: 180,
+                damage: 45, // Higher base damage
+                fireRate: 400,
+                color: '#cc0000',
+                secondaryColor: '#880000',
+                tertiaryColor: '#ff4444',
+                width: 95,
+                height: 105,
+                superMove: 'earthquake',
+                attackType: 'bullet',
+                world: 2,
+                trait: 'apexPredator', // 50% bonus damage to elites/bosses
+                traitName: 'APEX PREDATOR'
+            },
+            dilophosaurus: {
+                health: 110,
+                maxHealth: 110,
+                damage: 22,
+                fireRate: 120, // Super fast!
+                color: '#00cc66',
+                secondaryColor: '#008844',
+                tertiaryColor: '#44ff88',
+                width: 75,
+                height: 85,
+                superMove: 'venomStorm',
+                attackType: 'bullet',
+                world: 2,
+                trait: 'toxicSpit', // Poison DOT
+                traitName: 'TOXIC SPIT'
+            },
+            ankylosaurus: {
+                health: 280, // Massive health!
+                maxHealth: 280,
+                damage: 25,
+                fireRate: 550,
+                color: '#8b4513',
+                secondaryColor: '#654321',
+                tertiaryColor: '#a0522d',
+                width: 110,
+                height: 90,
+                superMove: 'armorNova',
+                attackType: 'bullet',
+                world: 2,
+                trait: 'heavyArmor', // 30% damage reduction
+                traitName: 'HEAVY ARMOR'
+            },
+            
+            // SECRET ROBO DINO - UNLOCKED BY BEATING WORLD 2 BOSS
+            robodino: {
+                health: 300, // MAX HEALTH!
+                maxHealth: 300,
+                damage: 50, // MAX DAMAGE!
+                fireRate: 100, // SUPER FAST!
+                color: '#00ffff',
+                secondaryColor: '#0088ff',
+                tertiaryColor: '#00ddff',
+                width: 110,
+                height: 110,
+                superMove: 'tripleBeam',
+                attackType: 'beam',
+                world: 2,
+                trait: 'tripleBeam', // Fires 3 beams at once
+                traitName: 'TRIPLE SPINE BEAM',
+                isSecret: true
+            }
+        };
+        
+        let player = null;
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let lastShot = 0;
+        let keys = {};
+        let spawnTimer = 0;
+        
+        // Spinosaurus beam state
+        let beamActive = false;
+        let beamStartTime = 0;
+        let beamCooldown = 0;
+        
+        // Auto-fire state
+        let autoFire = false;
+        
+        function selectDino(type) {
+            // Check if trying to select a locked World 2 dino
+            if ((type === 'allosaurus' || type === 'dilophosaurus' || type === 'ankylosaurus') && !world2Unlocked) {
+                const warning = document.getElementById('bossWarning');
+                warning.textContent = '🔒 LOCKED - Beat World 1 Boss or Use Code!';
+                warning.style.color = '#ff0000';
+                warning.style.textShadow = '0 0 20px #ff0000';
+                warning.style.display = 'block';
+                setTimeout(() => {
+                    warning.style.display = 'none';
+                }, 2000);
+                return;
+            }
+            
+            // Check if trying to select locked Robo Dino
+            if (type === 'robodino' && !roboUnlocked) {
+                const warning = document.getElementById('bossWarning');
+                warning.textContent = '🔒 LOCKED - Beat World 2 Boss or Use Code!';
+                warning.style.color = '#ff0000';
+                warning.style.textShadow = '0 0 20px #ff0000';
+                warning.style.display = 'block';
+                setTimeout(() => {
+                    warning.style.display = 'none';
+                }, 2000);
+                return;
+            }
+            
+            // Check if trying to select locked Brachiosaurus
+            if (type === 'brachiosaurus' && !brachioUnlocked) {
+                const warning = document.getElementById('bossWarning');
+                warning.textContent = '🔒 LOCKED - Beat World 1 Boss or Use Code!';
+                warning.style.color = '#ff0000';
+                warning.style.textShadow = '0 0 20px #ff0000';
+                warning.style.display = 'block';
+                setTimeout(() => {
+                    warning.style.display = 'none';
+                }, 2000);
+                return;
+            }
+            
+            // Check if trying to select locked Spinosaurus
+            if (type === 'spinosaurus' && !spinoUnlocked) {
+                const warning = document.getElementById('bossWarning');
+                warning.textContent = '🔒 LOCKED - Kill 2 Elites or Use Code!';
+                warning.style.color = '#ff0000';
+                warning.style.textShadow = '0 0 20px #ff0000';
+                warning.style.display = 'block';
+                setTimeout(() => {
+                    warning.style.display = 'none';
+                }, 2000);
+                return;
+            }
+            
+            player = {
+                ...dinoClasses[type],
+                x: canvas.width / 2,
+                y: canvas.height - 150,
+                speed: 7,
+                type: type
+            };
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('instructionsScreen').style.display = 'flex';
+            
+            // Show trait indicator if dino has a trait
+            if (player.trait) {
+                const traitIndicator = document.getElementById('traitIndicator');
+                traitIndicator.textContent = `⭐ ${player.traitName} ACTIVE`;
+                traitIndicator.style.display = 'block';
+            }
+        }
+        
+        function startGame() {
+            document.getElementById('instructionsScreen').style.display = 'none';
+            gameStarted = true;
+            gameLoop();
+        }
+        
+        function startWorld2() {
+            currentWorld = 2;
+            world2Unlocked = true;
+            document.body.classList.add('world2');
+            document.getElementById('worldIndicator').textContent = 'WORLD 2: LAVA';
+            document.getElementById('worldComplete').style.display = 'none';
+            
+            // Unlock World 2 dinos
+            document.getElementById('alloCard').classList.remove('locked');
+            document.getElementById('diloCard').classList.remove('locked');
+            document.getElementById('ankyCard').classList.remove('locked');
+            document.getElementById('alloCard').onclick = function() { selectDino('allosaurus'); };
+            document.getElementById('diloCard').onclick = function() { selectDino('dilophosaurus'); };
+            document.getElementById('ankyCard').onclick = function() { selectDino('ankylosaurus'); };
+            
+            // Save progress
+            saveProgress();
+            
+            // Show dino selection screen
+            currentDinoSet = 2;
+            document.getElementById('world1Dinos').style.display = 'none';
+            document.getElementById('world2Dinos').style.display = 'block';
+            document.getElementById('dinoSetTitle').textContent = 'Choose Your Dinosaur Class - World 2';
+            document.getElementById('startScreen').style.display = 'flex';
+            
+            // Reset game state
+            score = 0;
+            superCharge = 0;
+            bossSpawned = false;
+            bossDefeated = false;
+            elitesKilled = 0;
+            lastEliteScore = 0;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            powerUps = [];
+            boss = null;
+            bossPhase = 1;
+            gameEnded = false;
+            gameStarted = false;
+            poisonedEnemies.clear();
+        }
+        
+        window.selectDino = selectDino;
+        window.startGame = startGame;
+        window.startWorld2 = startWorld2;
+        
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' && gameStarted && !gameEnded) {
+                e.preventDefault();
+                shoot();
+            }
+            if (e.key === 'Shift' && superCharge >= 100) {
+                activateSuper();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        function shoot() {
+            const now = Date.now();
+            
+            // SPINOSAURUS HELD BEAM - Different system
+            if (player && player.type === 'spinosaurus') {
+                // Check if on cooldown
+                if (now < beamCooldown) {
+                    return; // Can't fire during cooldown
+                }
+                
+                // Start beam
+                if (!beamActive) {
+                    beamActive = true;
+                    beamStartTime = now;
+                }
+                return; // Don't process normal shooting
+            }
+            
+            const currentFireRate = hasSpeedShot ? player.fireRate / 3 : player.fireRate;
+            if (now - lastShot < currentFireRate) return;
+            lastShot = now;
+            
+            // Calculate damage with strength boost
+            const baseDamage = player.damage;
+            const finalDamage = hasStrength ? baseDamage * 1.5 : baseDamage; // 50% damage boost
+            
+            const bulletData = {
+                x: player.x,
+                y: player.y - player.height/2,
+                vx: 0,
+                vy: -12,
+                damage: finalDamage,
+                size: 8,
+                color: player.color
+            };
+            
+            // Apply Apex Predator trait (visual indicator - actual damage applied on hit)
+            if (player.trait === 'apexPredator') {
+                bulletData.apexPredator = true;
+            }
+            
+            // Apply Toxic Spit trait
+            if (player.trait === 'toxicSpit') {
+                bulletData.poison = true;
+                bulletData.color = '#00ff66'; // Green poison bullets
+            }
+            
+            // Strength boost visual effect - make bullets bigger and red-tinted
+            if (hasStrength) {
+                bulletData.size = 10;
+                bulletData.isStrength = true;
+            }
+            
+            // BRACHIOSAURUS NECK SLASH - Growing slash attack
+            if (player.type === 'brachiosaurus') {
+                // Center slash
+                bullets.push({
+                    ...bulletData,
+                    x: player.x,
+                    y: player.y - player.height/2 - 20,
+                    size: 15,
+                    growthRate: 1.5,
+                    maxSize: 50,
+                    color: player.tertiaryColor,
+                    isSlash: true,
+                    vy: -10
+                });
+                
+                // Triple shot - add two more slashes
+                if (hasTripleShot) {
+                    bullets.push({
+                        ...bulletData,
+                        x: player.x - 30,
+                        y: player.y - player.height/2 - 20,
+                        size: 15,
+                        growthRate: 1.5,
+                        maxSize: 50,
+                        color: player.tertiaryColor,
+                        isSlash: true,
+                        vx: -1,
+                        vy: -10
+                    });
+                    bullets.push({
+                        ...bulletData,
+                        x: player.x + 30,
+                        y: player.y - player.height/2 - 20,
+                        size: 15,
+                        growthRate: 1.5,
+                        maxSize: 50,
+                        color: player.tertiaryColor,
+                        isSlash: true,
+                        vx: 1,
+                        vy: -10
+                    });
+                }
+            } else if (player.trait === 'tripleBeam') {
+                // ROBO DINO TRIPLE BEAM - Fires 3 beams normally, 9 WITH TRIPLE SHOT!
+                
+                if (hasTripleShot) {
+                    // 9 BEAM BARRAGE! 3 rows of 3 beams each
+                    const beamConfigs = [
+                        // Top row (3 beams)
+                        { x: player.x - 30, y: -15, vx: -1.5, vy: -16, color: '#ffff00', size: 8 },
+                        { x: player.x, y: -15, vx: 0, vy: -16, color: '#ffff00', size: 10 },
+                        { x: player.x + 30, y: -15, vx: 1.5, vy: -16, color: '#ffff00', size: 8 },
+                        
+                        // Middle row (3 beams) - main triple beam
+                        { x: player.x - 20, y: -5, vx: -1, vy: -14, color: '#00ffff', size: 9 },
+                        { x: player.x, y: -10, vx: 0, vy: -15, color: '#ffff00', size: 10 },
+                        { x: player.x + 20, y: -5, vx: 1, vy: -14, color: '#00ffff', size: 9 },
+                        
+                        // Bottom row (3 beams)
+                        { x: player.x - 25, y: 0, vx: -0.5, vy: -13, color: '#00ffff', size: 8 },
+                        { x: player.x, y: 0, vx: 0, vy: -13, color: '#ffff00', size: 9 },
+                        { x: player.x + 25, y: 0, vx: 0.5, vy: -13, color: '#00ffff', size: 8 }
+                    ];
+                    
+                    beamConfigs.forEach(config => {
+                        bullets.push({
+                            ...bulletData,
+                            x: config.x,
+                            y: player.y - player.height/2 + config.y,
+                            color: config.color,
+                            size: config.size,
+                            vx: config.vx,
+                            vy: config.vy
+                        });
+                    });
+                } else {
+                    // Normal 3 beams
+                    // Center beam from spine (slightly behind)
+                    bullets.push({
+                        ...bulletData,
+                        x: player.x,
+                        y: player.y - player.height/2 - 10,
+                        color: '#ffff00',
+                        size: 10,
+                        vy: -15
+                    });
+                    // Left shoulder beam
+                    bullets.push({
+                        ...bulletData,
+                        x: player.x - 20,
+                        y: player.y - player.height/2 - 5,
+                        color: '#00ffff',
+                        size: 9,
+                        vx: -1,
+                        vy: -14
+                    });
+                    // Right shoulder beam
+                    bullets.push({
+                        ...bulletData,
+                        x: player.x + 20,
+                        y: player.y - player.height/2 - 5,
+                        color: '#00ffff',
+                        size: 9,
+                        vx: 1,
+                        vy: -14
+                    });
+                }
+            } else if (hasTripleShot) {
+                bullets.push({...bulletData});
+                bullets.push({...bulletData, x: player.x - 15, vx: -2});
+                bullets.push({...bulletData, x: player.x + 15, vx: 2});
+            } else {
+                bullets.push(bulletData);
+            }
+        }
+        
+        function spawnEnemy() {
+            if (!gameStarted || gameEnded) return;
+            
+            const difficulty = Math.floor(score / 500) + 1;
+            const difficultyMultiplier = currentWorld === 2 ? 1.5 : 1;
+            
+            enemies.push({
+                x: Math.random() * canvas.width,
+                y: -50,
+                vx: (Math.random() - 0.5) * 3 * difficultyMultiplier,
+                vy: (1.5 + Math.random() * 2 + (difficulty * 0.3)) * difficultyMultiplier,
+                health: (30 + (difficulty * 15)) * difficultyMultiplier,
+                maxHealth: (30 + (difficulty * 15)) * difficultyMultiplier,
+                width: 50,
+                height: 50,
+                color: currentWorld === 1 ? '#00ff00' : '#ff0000',
+                glow: 0,
+                animFrame: 0,
+                world: currentWorld,
+                id: Date.now() + Math.random() // Unique ID for poison tracking
+            });
+        }
+        
+        function spawnElite() {
+            const warning = document.getElementById('bossWarning');
+            warning.textContent = '⚡ ELITE ENEMY INCOMING ⚡';
+            warning.style.color = currentWorld === 1 ? '#ff8800' : '#ffaa00';
+            warning.style.textShadow = `0 0 20px ${currentWorld === 1 ? '#ff8800' : '#ffaa00'}`;
+            warning.style.display = 'block';
+            setTimeout(() => {
+                warning.textContent = '⚠️ BOSS INCOMING ⚠️';
+                warning.style.color = '#ff0000';
+                warning.style.textShadow = '0 0 20px #ff0000';
+                warning.style.display = 'none';
+            }, 2000);
+            
+            const difficulty = Math.floor(score / 500);
+            const difficultyMultiplier = currentWorld === 2 ? 1.5 : 1;
+            
+            enemies.push({
+                x: Math.random() * (canvas.width - 200) + 100,
+                y: -100,
+                vx: (2 + difficulty * 0.3) * difficultyMultiplier,
+                vy: 1,
+                health: (300 + difficulty * 50) * difficultyMultiplier,
+                maxHealth: (300 + difficulty * 50) * difficultyMultiplier,
+                width: 80,
+                height: 80,
+                color: currentWorld === 1 ? '#ff8800' : '#ffaa00',
+                glow: 0,
+                animFrame: 0,
+                isElite: true,
+                world: currentWorld,
+                id: Date.now() + Math.random()
+            });
+            
+            lastEliteScore = score;
+        }
+        
+        function spawnBoss() {
+            bossSpawned = true;
+            bossPhase = 1;
+            
+            const warning = document.getElementById('bossWarning');
+            warning.style.display = 'block';
+            setTimeout(() => {
+                warning.style.display = 'none';
+            }, 2000);
+            
+            const bossHealthMultiplier = currentWorld === 2 ? 1.8 : 1;
+            
+            boss = {
+                x: canvas.width / 2,
+                y: -150,
+                vx: currentWorld === 2 ? 4 : 3,
+                vy: 0.8,
+                health: 1000 * bossHealthMultiplier,
+                maxHealth: 1000 * bossHealthMultiplier,
+                width: 140,
+                height: 140,
+                color: currentWorld === 1 ? '#00ff00' : '#ff0000',
+                glow: 0,
+                shootTimer: 0,
+                animFrame: 0,
+                world: currentWorld,
+                isBoss: true,
+                id: 'boss'
+            };
+        }
+        
+        function spawnPowerUp() {
+            const rand = Math.random();
+            let type;
+            if (rand < 0.03) {
+                type = 'gold'; // All powers (rare)
+            } else if (rand < 0.10) {
+                type = 'mystery'; // Random power-up (uncommon)
+            } else if (rand < 0.25) {
+                type = 'shield';
+            } else if (rand < 0.40) {
+                type = 'triple';
+            } else if (rand < 0.55) {
+                type = 'speed';
+            } else if (rand < 0.70) {
+                type = 'strength'; // Damage boost
+            } else {
+                type = 'regen'; // Health regeneration
+            }
+            
+            powerUps.push({
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: -30,
+                vy: 2,
+                type: type,
+                size: 25,
+                rotation: 0
+            });
+        }
+        
+        function activateSuper() {
+            superCharge = 0;
+            
+            if (player.superMove === 'meteor') {
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * canvas.width;
+                        enemies.forEach(enemy => {
+                            if (Math.abs(enemy.x - x) < 100) {
+                                enemy.health -= 50;
+                                createParticles(enemy.x, enemy.y, enemy.color, 20);
+                            }
+                        });
+                        if (boss && Math.abs(boss.x - x) < 100) {
+                            boss.health -= 50;
+                            createParticles(boss.x, boss.y, boss.color, 20);
+                        }
+                        createParticles(x, 0, '#ff8800', 30);
+                    }, i * 100);
+                }
+            } else if (player.superMove === 'speedBlitz') {
+                const originalFireRate = player.fireRate;
+                player.fireRate = 50;
+                setTimeout(() => {
+                    player.fireRate = originalFireRate;
+                }, 3000);
+            } else if (player.superMove === 'shieldBurst') {
+                player.health = Math.min(player.health + 50, player.maxHealth);
+                hasShield = true;
+                powerUpTimer = 300;
+                enemies.forEach(enemy => {
+                    const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                    if (dist < 200) {
+                        enemy.health -= 100;
+                        createParticles(enemy.x, enemy.y, '#4444ff', 15);
+                    }
+                });
+                if (boss) {
+                    const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
+                    if (dist < 200) {
+                        boss.health -= 100;
+                        createParticles(boss.x, boss.y, boss.color, 15);
+                    }
+                }
+            } else if (player.superMove === 'earthquake') {
+                // ALLOSAURUS - Massive ground slam
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        enemies.forEach(enemy => {
+                            enemy.health -= 80;
+                            createParticles(enemy.x, enemy.y, '#8b4513', 15);
+                        });
+                        if (boss) {
+                            boss.health -= 150; // Extra boss damage
+                            createParticles(boss.x, boss.y, boss.color, 20);
+                        }
+                        createParticles(player.x, canvas.height - 100, '#8b4513', 40);
+                    }, i * 200);
+                }
+            } else if (player.superMove === 'venomStorm') {
+                // DILOPHOSAURUS - Poison cloud
+                enemies.forEach(enemy => {
+                    const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                    if (dist < 250) {
+                        // Apply strong poison
+                        if (!poisonedEnemies.has(enemy.id)) {
+                            poisonedEnemies.set(enemy.id, { damage: 3, ticks: 120 }); // 2 seconds
+                        }
+                        createParticles(enemy.x, enemy.y, '#00ff66', 20);
+                    }
+                });
+                if (boss) {
+                    if (!poisonedEnemies.has(boss.id)) {
+                        poisonedEnemies.set(boss.id, { damage: 5, ticks: 120 });
+                    }
+                    createParticles(boss.x, boss.y, '#00ff66', 30);
+                }
+            } else if (player.superMove === 'armorNova') {
+                // ANKYLOSAURUS - Shield + knockback
+                player.health = Math.min(player.health + 80, player.maxHealth);
+                hasShield = true;
+                powerUpTimer = 450; // Longer shield
+                enemies.forEach(enemy => {
+                    const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                    if (dist < 250) {
+                        enemy.health -= 120;
+                        enemy.vy += 3; // Knockback
+                        createParticles(enemy.x, enemy.y, '#a0522d', 20);
+                    }
+                });
+                if (boss) {
+                    const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
+                    if (dist < 250) {
+                        boss.health -= 150;
+                        createParticles(boss.x, boss.y, boss.color, 25);
+                    }
+                }
+            }
+        }
+        
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1,
+                    color: color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+        
+        function update() {
+            if (!gameStarted || gameEnded) return;
+            
+            // Move player
+            if (keys['a'] || keys['ArrowLeft']) player.x -= player.speed;
+            if (keys['d'] || keys['ArrowRight']) player.x += player.speed;
+            
+            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+            
+            // AUTO-FIRE - Shoot automatically if enabled
+            if (autoFire) {
+                shoot();
+            }
+            
+            // SPINOSAURUS BEAM MANAGEMENT
+            if (player && player.type === 'spinosaurus') {
+                const now = Date.now();
+                
+                // If beam is active
+                if (beamActive) {
+                    const beamDuration = now - beamStartTime;
+                    
+                    // Beam lasts 4 seconds
+                    if (beamDuration >= 4000 || !keys[' ']) { // End after 4 sec or when spacebar released
+                        beamActive = false;
+                        beamCooldown = now + 2000; // 2 second cooldown
+                    } else {
+                        // Beam is firing - deal damage to enemies in beam path
+                        const beamX = player.x;
+                        const beamY = player.y - player.height/2;
+                        const beamWidth = hasTripleShot ? 50 : 25; // Wider with triple shot
+                        let beamDamageMultiplier = hasTripleShot ? 1.5 : 1; // More damage with triple shot
+                        if (hasStrength) beamDamageMultiplier *= 1.5; // Strength boost stacks!
+                        const beamHeight = canvas.height;
+                        
+                        // Check collision with enemies
+                        enemies.forEach((enemy, i) => {
+                            if (enemy.x > beamX - beamWidth && enemy.x < beamX + beamWidth && enemy.y < beamY) {
+                                enemy.health -= (player.damage / 30) * beamDamageMultiplier; // Continuous damage
+                                if (enemy.health <= 0) {
+                                    handleEnemyDefeat(enemy, i);
+                                }
+                            }
+                        });
+                        
+                        // Check collision with boss
+                        if (boss && boss.x > beamX - beamWidth && boss.x < beamX + beamWidth && boss.y < beamY) {
+                            boss.health -= (player.damage / 30) * beamDamageMultiplier;
+                            if (boss.health <= 0) {
+                                handleBossDefeat();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Power-up timer
+            if (powerUpTimer > 0) {
+                powerUpTimer--;
+                
+                // Health regeneration while active
+                if (hasRegen && player) {
+                    player.health = Math.min(player.maxHealth, player.health + 0.5); // Heal 0.5 HP per frame
+                }
+                
+                if (powerUpTimer === 0) {
+                    hasShield = false;
+                    hasTripleShot = false;
+                    hasSpeedShot = false;
+                    hasStrength = false;
+                    hasRegen = false;
+                }
+            }
+            
+            // Spawn power-ups
+            powerUpSpawnTimer++;
+            if (powerUpSpawnTimer > 180) {
+                powerUpSpawnTimer = 0;
+                if (Math.random() < 0.4) {
+                    spawnPowerUp();
+                }
+            }
+            
+            // Spawn enemies
+            spawnTimer++;
+            const spawnRate = currentWorld === 2 ? 45 : 60;
+            if (!boss && spawnTimer > spawnRate) {
+                spawnTimer = 0;
+                spawnEnemy();
+            }
+            
+            // Boss spawn
+            if (!boss && !bossSpawned && score >= 1000) {
+                spawnBoss();
+            }
+            
+            // Elite spawn
+            if (score >= lastEliteScore + 500 && score % 500 === 0 && score !== 1000) {
+                spawnElite();
+            }
+            
+            // Update poison effects
+            poisonedEnemies.forEach((poison, id) => {
+                poison.ticks--;
+                
+                // Apply poison damage every frame
+                const target = enemies.find(e => e.id === id) || (boss && boss.id === id ? boss : null);
+                if (target) {
+                    target.health -= poison.damage / 60; // Smooth damage per frame
+                    
+                    // Poison particles
+                    if (Math.random() < 0.1) {
+                        createParticles(target.x, target.y, '#00ff66', 2);
+                    }
+                }
+                
+                if (poison.ticks <= 0 || !target) {
+                    poisonedEnemies.delete(id);
+                }
+            });
+            
+            // Update boss
+            if (boss) {
+                boss.x += boss.vx;
+                boss.y += boss.vy;
+                boss.glow = (boss.glow + 0.1) % (Math.PI * 2);
+                boss.animFrame = (boss.animFrame + 0.1) % (Math.PI * 2);
+                
+                // Phase 2
+                if (bossPhase === 1 && boss.health <= boss.maxHealth / 2) {
+                    bossPhase = 2;
+                    boss.color = currentWorld === 1 ? '#ff00ff' : '#ffff00';
+                    const warning = document.getElementById('bossWarning');
+                    warning.textContent = '⚡ PHASE 2 ⚡';
+                    warning.style.display = 'block';
+                    setTimeout(() => {
+                        warning.textContent = '⚠️ BOSS INCOMING ⚠️';
+                        warning.style.display = 'none';
+                    }, 2000);
+                }
+                
+                const bossSpeed = bossPhase === 2 ? (currentWorld === 2 ? 6 : 5) : (currentWorld === 2 ? 4 : 3);
+                if (boss.x < 100 || boss.x > canvas.width - 100) {
+                    boss.vx = boss.vx > 0 ? -bossSpeed : bossSpeed;
+                }
+                boss.y = Math.min(boss.y, 150);
+                
+                boss.shootTimer++;
+                const shootDelay = bossPhase === 2 ? (currentWorld === 2 ? 20 : 30) : (currentWorld === 2 ? 40 : 50);
+                const laserCount = bossPhase === 2 ? (currentWorld === 2 ? 7 : 5) : (currentWorld === 2 ? 4 : 3);
+                
+                if (boss.shootTimer > shootDelay) {
+                    boss.shootTimer = 0;
+                    const angleToPlayer = Math.atan2(player.y - boss.y, player.x - boss.x);
+                    
+                    for (let j = -(laserCount-1)/2; j <= (laserCount-1)/2; j++) {
+                        const angle = angleToPlayer + j * 0.25;
+                        bullets.push({
+                            x: boss.x,
+                            y: boss.y + boss.height/2,
+                            vx: Math.cos(angle) * 8,
+                            vy: Math.sin(angle) * 8,
+                            damage: currentWorld === 2 ? -15 : -10,
+                            size: 15,
+                            color: boss.color,
+                            enemy: true,
+                            laser: true
+                        });
+                    }
+                }
+            }
+            
+            // Update bullets
+            bullets.forEach((bullet, i) => {
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+                
+                // BRACHIOSAURUS GROWING SLASH - Size increases over time
+                if (bullet.isSlash && bullet.growthRate) {
+                    bullet.size = Math.min(bullet.size + bullet.growthRate, bullet.maxSize || 50);
+                }
+                
+                // SPINOSAURUS BEAM - Remove beam segments after duration
+                if (bullet.isBeam) {
+                    const now = Date.now();
+                    if (now > bullet.beamEndTime) {
+                        bullets.splice(i, 1);
+                        return;
+                    }
+                }
+                
+                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                    bullets.splice(i, 1);
+                }
+            });
+            
+            // Update power-ups
+            powerUps.forEach((powerUp, i) => {
+                powerUp.y += powerUp.vy;
+                powerUp.rotation += 0.05;
+                
+                // Improved collision detection - use larger radius for tall dinos
+                const collisionRadius = Math.max(player.width, player.height) / 2;
+                const dist = Math.hypot(player.x - powerUp.x, player.y - powerUp.y);
+                if (dist < collisionRadius + powerUp.size) {
+                    if (powerUp.type === 'gold') {
+                        hasShield = true;
+                        hasTripleShot = true;
+                        hasSpeedShot = true;
+                        hasStrength = true;
+                        hasRegen = true;
+                        powerUpTimer = 600;
+                    } else if (powerUp.type === 'mystery') {
+                        // Random power-up - pick one randomly
+                        const mysteryTypes = ['shield', 'triple', 'speed', 'strength', 'regen'];
+                        const randomType = mysteryTypes[Math.floor(Math.random() * mysteryTypes.length)];
+                        if (randomType === 'shield') hasShield = true;
+                        else if (randomType === 'triple') hasTripleShot = true;
+                        else if (randomType === 'speed') hasSpeedShot = true;
+                        else if (randomType === 'strength') hasStrength = true;
+                        else if (randomType === 'regen') hasRegen = true;
+                        powerUpTimer = 300;
+                    } else if (powerUp.type === 'shield') {
+                        hasShield = true;
+                        powerUpTimer = 300;
+                    } else if (powerUp.type === 'triple') {
+                        hasTripleShot = true;
+                        powerUpTimer = 300;
+                    } else if (powerUp.type === 'speed') {
+                        hasSpeedShot = true;
+                        powerUpTimer = 300;
+                    } else if (powerUp.type === 'strength') {
+                        hasStrength = true;
+                        powerUpTimer = 300;
+                    } else if (powerUp.type === 'regen') {
+                        hasRegen = true;
+                        powerUpTimer = 300;
+                    }
+                    powerUps.splice(i, 1);
+                }
+                
+                if (powerUp.y > canvas.height) {
+                    powerUps.splice(i, 1);
+                }
+            });
+            
+            // Update enemies
+            enemies.forEach((enemy, i) => {
+                enemy.x += enemy.vx;
+                enemy.y += enemy.vy;
+                enemy.glow = (enemy.glow + 0.1) % (Math.PI * 2);
+                enemy.animFrame = (enemy.animFrame + 0.1) % (Math.PI * 2);
+                
+                if (enemy.x < 0 || enemy.x > canvas.width) {
+                    enemy.vx *= -1;
+                }
+                
+                if (enemy.y > 50) {
+                    const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                    const collisionRadius = (enemy.width + player.width) / 2.5;
+                    if (dist < collisionRadius) {
+                        if (!hasShield) {
+                            let damage = currentWorld === 2 ? 20 : 15;
+                            // Apply Heavy Armor trait
+                            if (player.trait === 'heavyArmor') {
+                                damage *= 0.7; // 30% reduction
+                            }
+                            player.health -= damage;
+                        }
+                        enemies.splice(i, 1);
+                        createParticles(enemy.x, enemy.y, '#ff0000', 10);
+                    }
+                }
+                
+                if (enemy.y > canvas.height + 50) {
+                    enemies.splice(i, 1);
+                }
+            });
+            
+            // Bullet collisions
+            bullets.forEach((bullet, bi) => {
+                if (bullet.enemy && player) {
+                    const dist = Math.hypot(player.x - bullet.x, player.y - bullet.y);
+                    if (dist < player.width/2 + bullet.size) {
+                        if (!hasShield) {
+                            let damage = -bullet.damage; // Convert to positive
+                            // Apply Heavy Armor trait
+                            if (player.trait === 'heavyArmor') {
+                                damage *= 0.7;
+                            }
+                            player.health -= damage;
+                        }
+                        bullets.splice(bi, 1);
+                        createParticles(player.x, player.y, '#ff0000', 10);
+                        return;
+                    }
+                }
+                
+                // Player bullets hit boss
+                if (boss && !bullet.enemy) {
+                    const dist = Math.hypot(boss.x - bullet.x, boss.y - bullet.y);
+                    if (dist < boss.width/2 + bullet.size) {
+                        let damage = bullet.damage;
+                        
+                        // Apply Apex Predator trait
+                        if (bullet.apexPredator) {
+                            damage *= 1.5; // 50% bonus
+                        }
+                        
+                        boss.health -= damage;
+                        
+                        // Apply poison
+                        if (bullet.poison && !poisonedEnemies.has(boss.id)) {
+                            poisonedEnemies.set(boss.id, { damage: 2, ticks: 90 }); // 1.5 seconds
+                        }
+                        
+                        bullets.splice(bi, 1);
+                        createParticles(boss.x, boss.y, boss.color, 5);
+                        
+                        if (boss.health <= 0) {
+                            handleBossDefeat();
+                        }
+                    }
+                }
+                
+                // Player bullets hit enemies
+                if (!bullet.enemy) {
+                    enemies.forEach((enemy, ei) => {
+                        const dist = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
+                        if (dist < enemy.width/2 + bullet.size) {
+                            let damage = bullet.damage;
+                            
+                            // Apply Apex Predator trait to elites
+                            if (bullet.apexPredator && enemy.isElite) {
+                                damage *= 1.5;
+                            }
+                            
+                            enemy.health -= damage;
+                            
+                            // Apply poison
+                            if (bullet.poison && !poisonedEnemies.has(enemy.id)) {
+                                poisonedEnemies.set(enemy.id, { damage: 1.5, ticks: 90 });
+                            }
+                            
+                            bullets.splice(bi, 1);
+                            createParticles(enemy.x, enemy.y, enemy.color, 5);
+                            
+                            if (enemy.health <= 0) {
+                                handleEnemyDefeat(enemy, ei);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Update particles
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                p.vy += 0.1;
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+            
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('health').textContent = Math.max(0, Math.round(player.health));
+            document.getElementById('enemies').textContent = enemies.length;
+            document.getElementById('nextBoss').textContent = bossSpawned ? (boss ? 'FIGHTING BOSS!' : 'BOSS DEFEATED') : (1000 - score);
+            document.getElementById('superFill').style.width = superCharge + '%';
+            
+            if (player.health <= 0) {
+                handleGameOver();
+            }
+        }
+        
+        function handleBossDefeat() {
+            score += 500;
+            superCharge = Math.min(100, superCharge + 50);
+            createParticles(boss.x, boss.y, boss.color, 50);
+            poisonedEnemies.delete(boss.id);
+            boss = null;
+            
+            if (currentWorld === 1) {
+                gameEnded = true;
+                document.getElementById('worldScore').textContent = score;
+                document.getElementById('worldComplete').style.display = 'flex';
+            } else {
+                // WORLD 2 BOSS DEFEATED - UNLOCK ROBO DINO!
+                roboUnlocked = true;
+                document.getElementById('roboCard').classList.remove('locked');
+                document.getElementById('roboCard').onclick = function() { selectDino('robodino'); };
+                
+                // Save progress
+                saveProgress();
+                
+                const warning = document.getElementById('bossWarning');
+                warning.textContent = '🤖 ROBO DINO UNLOCKED! 🤖';
+                warning.style.color = '#00ffff';
+                warning.style.textShadow = '0 0 30px #00ffff';
+                warning.style.display = 'block';
+                setTimeout(() => {
+                    warning.textContent = '🎉 WORLD 2 COMPLETE! 🎉';
+                    warning.style.color = '#ffd700';
+                    warning.style.textShadow = '0 0 20px #ffd700';
+                    setTimeout(() => {
+                        warning.style.display = 'none';
+                    }, 3000);
+                }, 3000);
+            }
+        }
+        
+        function handleEnemyDefeat(enemy, index) {
+            const points = enemy.isElite ? 200 : 100;
+            score += points;
+            superCharge = Math.min(100, superCharge + (enemy.isElite ? 20 : 10));
+            createParticles(enemy.x, enemy.y, enemy.color, 30);
+            poisonedEnemies.delete(enemy.id);
+            enemies.splice(index, 1);
+        }
+        
+        function handleGameOver() {
+            gameEnded = true;
+            const message = document.getElementById('gameOverMessage');
+            if (currentWorld === 2) {
+                message.textContent = '🔥 You survived the Lava Planet! 🔥';
+            } else if (bossSpawned && !boss) {
+                message.textContent = '🎉 You defeated the boss! 🎉';
+            } else {
+                message.textContent = '';
+            }
+            document.getElementById('gameOver').style.display = 'flex';
+            document.getElementById('finalScore').textContent = score;
+            
+            // Update the "PLAY AGAIN" button to properly show unlocked dinos
+            const playAgainBtn = document.querySelector('#gameOver button');
+            playAgainBtn.onclick = function() {
+                location.reload();
+            };
+        }
+        
+        function drawDino(x, y, width, height, color, secondaryColor, tertiaryColor, type) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = color;
+            
+            function drawWithOutline(drawFunc, outlineColor = '#000') {
+                ctx.strokeStyle = outlineColor;
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                drawFunc();
+                ctx.stroke();
+                drawFunc();
+                ctx.fill();
+            }
+            
+            if (type === 'trex') {
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(15, -10, 15, 8);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, -15, 25, 30);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = tertiaryColor;
+                ctx.fillRect(-6, -8, 12, 18);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-25, -20, 20, 18);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-20, -18, 5, 5);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-19, -17, 3, 3);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-8, 15, 6, 15);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(4, 15, 6, 15);
+                    ctx.closePath();
+                });
+            } else if (type === 'raptor') {
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(12, -8, 18, 6);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-8, -12, 20, 25);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-4, -8, 4, 8);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-20, -15, 15, 14);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-16, -13, 4, 4);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-15, -12, 2, 2);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-6, 13, 5, 15);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(3, 13, 5, 15);
+                    ctx.closePath();
+                });
+            } else if (type === 'triceratops') {
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(18, -5, 12, 6);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = secondaryColor;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-25, -22, 20, 15);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = tertiaryColor;
+                ctx.fillRect(-25, -22, 3, 8);
+                ctx.fillRect(-20, -24, 3, 8);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, -10, 28, 28);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-18, -18, 18, 16);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-14, -16, 4, 4);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-13, -15, 2, 2);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-8, 18, 5, 12);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(8, 18, 5, 12);
+                    ctx.closePath();
+                });
+            } else if (type === 'allosaurus') {
+                // ALLOSAURUS - Larger, meaner T-Rex
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(18, -12, 18, 10);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-12, -18, 30, 35);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = tertiaryColor;
+                ctx.fillRect(-7, -10, 14, 20);
+                
+                // Spiky back
+                ctx.fillStyle = secondaryColor;
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(-10 + i * 8, -18, 4, 8);
+                }
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-28, -23, 22, 20);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-22, -21, 6, 6);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(-21, -20, 4, 4);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, 17, 7, 17);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(5, 17, 7, 17);
+                    ctx.closePath();
+                });
+            } else if (type === 'dilophosaurus') {
+                // DILOPHOSAURUS - Raptor with head crest
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(14, -10, 20, 7);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, -14, 24, 28);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-5, -10, 5, 10);
+                ctx.fillRect(3, 3, 5, 10);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-22, -17, 16, 15);
+                    ctx.closePath();
+                });
+                
+                // DOUBLE HEAD CREST
+                ctx.fillStyle = tertiaryColor;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.moveTo(-20, -17);
+                    ctx.lineTo(-18, -27);
+                    ctx.lineTo(-12, -17);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.moveTo(-14, -17);
+                    ctx.lineTo(-12, -25);
+                    ctx.lineTo(-8, -17);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-18, -15, 5, 5);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(-17, -14, 3, 3);
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-7, 14, 6, 16);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(4, 14, 6, 16);
+                    ctx.closePath();
+                });
+            } else if (type === 'ankylosaurus') {
+                // ANKYLOSAURUS - Heavily armored tank
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(20, -3, 14, 8);
+                    ctx.closePath();
+                });
+                
+                // TAIL CLUB
+                ctx.fillStyle = secondaryColor;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(32, -8, 12, 18);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-12, -12, 32, 30);
+                    ctx.closePath();
+                });
+                
+                // ARMOR PLATES
+                ctx.fillStyle = secondaryColor;
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(-10 + i * 7, -12, 6, 6);
+                }
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(-10 + i * 7, 0, 6, 6);
+                }
+                
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-20, -20, 20, 18);
+                    ctx.closePath();
+                });
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-16, -18, 5, 5);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-15, -17, 3, 3);
+                
+                // 4 LEGS
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, 18, 6, 14);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(0, 18, 6, 14);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(10, 18, 6, 14);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(18, 18, 6, 14);
+                    ctx.closePath();
+                });
+            } else if (type === 'robodino') {
+                // ROBO DINO - Futuristic robot dinosaur with triple beam cannons
+                // Main robotic body
+                ctx.fillStyle = color;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = color;
+                
+                // Tail with tech details
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(18, -8, 20, 8);
+                    ctx.closePath();
+                });
+                
+                // Segmented tail
+                ctx.fillStyle = secondaryColor;
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(18 + i * 7, -8, 6, 8);
+                }
+                
+                // Main torso with armor plating
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-12, -15, 30, 33);
+                    ctx.closePath();
+                });
+                
+                // Tech armor panels
+                ctx.fillStyle = tertiaryColor;
+                ctx.fillRect(-10, -12, 26, 4);
+                ctx.fillRect(-10, -4, 26, 4);
+                ctx.fillRect(-10, 4, 26, 4);
+                
+                // SPINE BEAM CANNON (center/top)
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#ffff00';
+                ctx.fillRect(-4, -20, 8, 5);
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-3, -19, 6, 3);
+                
+                // LEFT SHOULDER BEAM CANNON
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#ffff00';
+                ctx.fillRect(-15, -12, 6, 6);
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-14, -11, 4, 4);
+                
+                // RIGHT SHOULDER BEAM CANNON
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#ffff00';
+                ctx.fillRect(14, -12, 6, 6);
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(15, -11, 4, 4);
+                
+                ctx.shadowBlur = 15;
+                
+                // Head with visor
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-24, -22, 20, 18);
+                    ctx.closePath();
+                });
+                
+                // Glowing visor "eye"
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#00ffff';
+                ctx.fillRect(-20, -20, 12, 6);
+                
+                // Robot detail lines
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-18, -20);
+                ctx.lineTo(-18, -14);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-12, -20);
+                ctx.lineTo(-12, -14);
+                ctx.stroke();
+                
+                ctx.shadowBlur = 12;
+                
+                // Robotic legs
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, 18, 7, 16);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(5, 18, 7, 16);
+                    ctx.closePath();
+                });
+                
+                // Leg joints
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-9, 22, 5, 3);
+                ctx.fillRect(6, 22, 5, 3);
+                ctx.fillRect(-9, 28, 5, 3);
+                ctx.fillRect(6, 28, 5, 3);
+            } else if (type === 'brachiosaurus') {
+                // BRACHIOSAURUS - Tall sauropod with long neck
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = color;
+                
+                // Tail
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(20, 0, 25, 10);
+                    ctx.closePath();
+                });
+                
+                // Main body
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-15, -5, 35, 20);
+                    ctx.closePath();
+                });
+                
+                // Belly spots
+                ctx.fillStyle = tertiaryColor;
+                ctx.fillRect(-10, 0, 8, 8);
+                ctx.fillRect(0, 2, 8, 6);
+                ctx.fillRect(10, 0, 8, 8);
+                
+                // Very long neck going upward
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-18, -45, 10, 45);
+                    ctx.closePath();
+                });
+                
+                // Neck pattern
+                ctx.fillStyle = secondaryColor;
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(-16, -40 + i * 8, 6, 6);
+                }
+                
+                // Head at top
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-22, -55, 18, 15);
+                    ctx.closePath();
+                });
+                
+                // Eye
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-18, -52, 5, 5);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-17, -51, 3, 3);
+                
+                // Mouth
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-20, -45);
+                ctx.lineTo(-10, -45);
+                ctx.stroke();
+                
+                // Four thick legs
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-12, 15, 8, 20);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-2, 15, 8, 20);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(8, 15, 8, 20);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(18, 15, 8, 20);
+                    ctx.closePath();
+                });
+            } else if (type === 'spinosaurus') {
+                // SPINOSAURUS - Purple dino with large spine sail
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = color;
+                
+                // Tail
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(22, -8, 18, 10);
+                    ctx.closePath();
+                });
+                
+                // Main body
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-12, -15, 34, 30);
+                    ctx.closePath();
+                });
+                
+                // LARGE SPINE SAIL - iconic feature
+                ctx.fillStyle = tertiaryColor;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = tertiaryColor;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.moveTo(-8, -15);
+                    ctx.lineTo(-8, -45); // Peak of sail
+                    ctx.lineTo(18, -30);
+                    ctx.lineTo(18, -15);
+                    ctx.closePath();
+                }, color);
+                
+                // Sail spines
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 0;
+                for (let i = 0; i < 4; i++) {
+                    const x = -8 + i * 7;
+                    ctx.beginPath();
+                    ctx.moveTo(x, -15);
+                    ctx.lineTo(x - 2, -35 + i * 5);
+                    ctx.stroke();
+                }
+                
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = color;
+                
+                // Head with crocodile-like snout
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-30, -12, 22, 14);
+                    ctx.closePath();
+                });
+                
+                // Long snout
+                ctx.fillStyle = secondaryColor;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-35, -10, 10, 10);
+                    ctx.closePath();
+                });
+                
+                // Eye
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffff00';
+                ctx.fillRect(-24, -10, 5, 5);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-23, -9, 3, 3);
+                
+                ctx.shadowBlur = 12;
+                
+                // Teeth
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-32, -6, 3, 4);
+                ctx.fillRect(-28, -6, 3, 4);
+                ctx.fillRect(-24, -6, 3, 4);
+                
+                // Strong legs
+                ctx.fillStyle = color;
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(-10, 15, 7, 18);
+                    ctx.closePath();
+                });
+                drawWithOutline(() => {
+                    ctx.beginPath();
+                    ctx.rect(5, 15, 7, 18);
+                    ctx.closePath();
+                });
+                
+                // Leg details
+                ctx.fillStyle = secondaryColor;
+                ctx.fillRect(-9, 20, 5, 3);
+                ctx.fillRect(6, 20, 5, 3);
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawAlien(x, y, width, height, color, glow, animFrame, isBoss, isElite, world) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            const glowIntensity = Math.sin(glow) * 15 + 25;
+            const pulse = Math.sin(animFrame) * 0.08;
+            const scaleW = width * (1 + pulse);
+            const scaleH = height * (1 + pulse);
+            
+            if (isBoss) {
+                if (world === 1) {
+                    // UFO BOSS - Space Saucer
+                    ctx.shadowBlur = glowIntensity + 15;
+                    ctx.shadowColor = '#00ff00';
+                    
+                    // Top dome
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -scaleH/3, scaleW/2.5, scaleH/2.5, 0, Math.PI, 0, true);
+                    ctx.fill();
+                    
+                    // Dome windows
+                    ctx.fillStyle = '#88ff88';
+                    for (let i = -2; i <= 2; i++) {
+                        ctx.beginPath();
+                        ctx.arc(i * scaleW/8, -scaleH/3, scaleW/20, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Main saucer body
+                    ctx.fillStyle = '#00cc00';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, scaleW/2, scaleH/4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Saucer rim
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    ctx.ellipse(0, scaleH/8, scaleW/1.8, scaleH/6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bottom lights
+                    const lightCount = 8;
+                    for (let i = 0; i < lightCount; i++) {
+                        const angle = (i / lightCount) * Math.PI * 2 + animFrame;
+                        const lx = Math.cos(angle) * scaleW/2.5;
+                        const ly = scaleH/6;
+                        
+                        ctx.fillStyle = i % 2 === 0 ? '#ffff00' : '#00ffff';
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.beginPath();
+                        ctx.arc(lx, ly, scaleW/15, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Tractor beam
+                    ctx.fillStyle = `rgba(0, 255, 0, ${0.2 + pulse})`;
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#00ff00';
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/6, scaleH/4);
+                    ctx.lineTo(-scaleW/3, scaleH);
+                    ctx.lineTo(scaleW/3, scaleH);
+                    ctx.lineTo(scaleW/6, scaleH/4);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // DEMON BOSS - Lava World
+                    ctx.shadowBlur = glowIntensity + 20;
+                    ctx.shadowColor = color;
+                    
+                    // Demon head
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, scaleW/2.2, scaleH/2.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Large horns
+                    ctx.fillStyle = '#880000';
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/3, -scaleH/3);
+                    ctx.lineTo(-scaleW/2, -scaleH/1.8);
+                    ctx.lineTo(-scaleW/4, -scaleH/4);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/3, -scaleH/3);
+                    ctx.lineTo(scaleW/2, -scaleH/1.8);
+                    ctx.lineTo(scaleW/4, -scaleH/4);
+                    ctx.fill();
+                    
+                    // Glowing eyes
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#ffff00';
+                    ctx.beginPath();
+                    ctx.ellipse(-scaleW/8, -scaleH/8, scaleW/12, scaleH/10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(scaleW/8, -scaleH/8, scaleW/12, scaleH/10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Fire aura
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2 + animFrame;
+                        const fx = Math.cos(angle) * scaleW/2;
+                        const fy = Math.sin(angle) * scaleH/2;
+                        
+                        ctx.fillStyle = i % 2 === 0 ? '#ff8800' : '#ffff00';
+                        ctx.shadowBlur = 25;
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, scaleW/15, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            } else if (isElite) {
+                if (world === 1) {
+                    // WORLD 1 ELITE - Robot enemy
+                    ctx.shadowBlur = glowIntensity + 10;
+                    ctx.shadowColor = color;
+                    
+                    // Robot body
+                    ctx.fillStyle = '#666666';
+                    ctx.fillRect(-scaleW/3, -scaleH/4, scaleW/1.5, scaleH/2);
+                    
+                    // Armor plating
+                    ctx.fillStyle = color;
+                    ctx.fillRect(-scaleW/4, -scaleH/5, scaleW/2, scaleH/10);
+                    ctx.fillRect(-scaleW/4, scaleH/10, scaleW/2, scaleH/10);
+                    
+                    // Robot head
+                    ctx.fillStyle = '#888888';
+                    ctx.beginPath();
+                    ctx.arc(0, -scaleH/3, scaleW/4, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Visor
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = color;
+                    ctx.fillRect(-scaleW/6, -scaleH/3, scaleW/3, scaleH/12);
+                    
+                    // Antenna
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -scaleH/2.5);
+                    ctx.lineTo(0, -scaleH/1.8);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 20;
+                    ctx.beginPath();
+                    ctx.arc(0, -scaleH/1.8, scaleW/15, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Arms
+                    ctx.strokeStyle = '#888888';
+                    ctx.lineWidth = 6;
+                    ctx.shadowBlur = 0;
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/3, -scaleH/8);
+                    ctx.lineTo(-scaleW/2, scaleH/6);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/3, -scaleH/8);
+                    ctx.lineTo(scaleW/2, scaleH/6);
+                    ctx.stroke();
+                    
+                    // Claws
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = color;
+                    ctx.beginPath();
+                    ctx.arc(-scaleW/2, scaleH/6, scaleW/12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(scaleW/2, scaleH/6, scaleW/12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Core
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, scaleW/10, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // WORLD 2 ELITE - LAVA GOLEM (completely different from robot)
+                    ctx.shadowBlur = glowIntensity + 15;
+                    ctx.shadowColor = color;
+                    
+                    // Rocky body with lava cracks
+                    ctx.fillStyle = '#331100';
+                    ctx.fillRect(-scaleW/2.8, -scaleH/3, scaleW/1.4, scaleH/1.5);
+                    
+                    // Lava cracks (glowing)
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = color;
+                    
+                    // Vertical cracks
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/6, -scaleH/4);
+                    ctx.lineTo(-scaleW/8, scaleH/10);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/6, -scaleH/3);
+                    ctx.lineTo(scaleW/8, scaleH/8);
+                    ctx.stroke();
+                    
+                    // Horizontal cracks
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/3, -scaleH/10);
+                    ctx.lineTo(scaleW/3, -scaleH/12);
+                    ctx.stroke();
+                    
+                    // Molten core (pulsing)
+                    const corePulse = Math.sin(animFrame * 2) * 0.2 + 1;
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowBlur = 40 * corePulse;
+                    ctx.shadowColor = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, scaleW/8 * corePulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Inner core
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 30;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, scaleW/12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Rocky head with lava eyes
+                    ctx.fillStyle = '#442200';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#000';
+                    ctx.fillRect(-scaleW/3.5, -scaleH/1.8, scaleW/1.8, scaleH/2.5);
+                    
+                    // Lava eyes
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 35;
+                    ctx.shadowColor = color;
+                    ctx.fillRect(-scaleW/6, -scaleH/2.2, scaleW/10, scaleH/8);
+                    ctx.fillRect(scaleW/12, -scaleH/2.2, scaleW/10, scaleH/8);
+                    
+                    // Eye glow centers
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowBlur = 40;
+                    ctx.shadowColor = '#ffff00';
+                    ctx.fillRect(-scaleW/7, -scaleH/2.3, scaleW/15, scaleH/12);
+                    ctx.fillRect(scaleW/9, -scaleH/2.3, scaleW/15, scaleH/12);
+                    
+                    // Massive rocky arms
+                    ctx.fillStyle = '#553300';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#000';
+                    
+                    // Left arm
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/2.8, -scaleH/6);
+                    ctx.lineTo(-scaleW/1.8, scaleH/8);
+                    ctx.lineTo(-scaleW/1.5, scaleH/8);
+                    ctx.lineTo(-scaleW/2.5, -scaleH/8);
+                    ctx.fill();
+                    
+                    // Right arm
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/2.8, -scaleH/6);
+                    ctx.lineTo(scaleW/1.8, scaleH/8);
+                    ctx.lineTo(scaleW/1.5, scaleH/8);
+                    ctx.lineTo(scaleW/2.5, -scaleH/8);
+                    ctx.fill();
+                    
+                    // Lava drips from arms
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = color;
+                    for (let i = 0; i < 3; i++) {
+                        const offset = Math.sin(animFrame * 3 + i) * scaleW/15;
+                        ctx.beginPath();
+                        ctx.arc(-scaleW/1.7 + offset, scaleH/8 + scaleW/12, scaleW/18, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(scaleW/1.7 + offset, scaleH/8 + scaleW/12, scaleW/18, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Flame aura
+                    ctx.shadowBlur = 20;
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2 + animFrame;
+                        const dist = scaleW/2.2;
+                        const fx = Math.cos(angle) * dist;
+                        const fy = Math.sin(angle) * dist * 0.8;
+                        
+                        ctx.fillStyle = i % 2 === 0 ? '#ff4400' : '#ff8800';
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, scaleW/14, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            } else {
+                // REGULAR ALIENS
+                if (world === 1) {
+                    // Green blob alien
+                    ctx.shadowBlur = glowIntensity;
+                    ctx.shadowColor = color;
+                    
+                    // Body
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, scaleW/2.5, scaleH/3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bumps
+                    ctx.fillStyle = '#00cc00';
+                    ctx.beginPath();
+                    ctx.ellipse(-scaleW/6, -scaleH/8, scaleW/8, scaleH/10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(scaleW/6, scaleH/12, scaleW/10, scaleH/12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Head dome
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -scaleH/3, scaleW/3, scaleH/2.8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Brain texture
+                    ctx.strokeStyle = '#00cc00';
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 5;
+                    ctx.beginPath();
+                    ctx.arc(-scaleW/10, -scaleH/3, scaleW/12, 0, Math.PI);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(scaleW/10, -scaleH/3, scaleW/12, 0, Math.PI);
+                    ctx.stroke();
+                    
+                    // Eyes
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.ellipse(-scaleW/8, -scaleH/3.5, scaleW/10, scaleH/8, -0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(scaleW/8, -scaleH/3.5, scaleW/10, scaleH/8, 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Eye glow
+                    ctx.fillStyle = '#00ff00';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00ff00';
+                    ctx.beginPath();
+                    ctx.arc(-scaleW/8, -scaleH/3.3, scaleW/25, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(scaleW/8, -scaleH/3.3, scaleW/25, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Tentacles
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.shadowBlur = glowIntensity;
+                    
+                    for (let i = -1; i <= 1; i++) {
+                        const wave = Math.sin(animFrame + i) * scaleW/6;
+                        ctx.beginPath();
+                        ctx.moveTo(i * scaleW/4, scaleH/4);
+                        ctx.quadraticCurveTo(
+                            i * scaleW/4 + wave,
+                            scaleH/2,
+                            i * scaleW/4 + wave/2,
+                            scaleH * 0.7
+                        );
+                        ctx.stroke();
+                        
+                        // Suction cups
+                        ctx.fillStyle = '#00cc00';
+                        ctx.shadowBlur = 5;
+                        for (let j = 0; j < 2; j++) {
+                            const t = (j + 1) / 3;
+                            const tx = i * scaleW/4 + wave * t;
+                            const ty = scaleH/4 + (scaleH * 0.45) * t;
+                            ctx.beginPath();
+                            ctx.arc(tx, ty, scaleW/18, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    
+                    // Core
+                    ctx.fillStyle = '#88ff88';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#88ff88';
+                    ctx.beginPath();
+                    ctx.arc(0, scaleH/10, scaleW/12, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // IMPROVED Red demon minion - more detailed and menacing
+                    ctx.shadowBlur = glowIntensity + 10;
+                    ctx.shadowColor = color;
+                    
+                    // Main body with scales
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, scaleW/2.5, scaleH/2.8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Dark spine ridge
+                    ctx.fillStyle = '#660000';
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (i / 4 - 0.5) * Math.PI * 0.6;
+                        const sx = Math.sin(angle) * scaleW/3;
+                        const sy = -scaleH/4 + Math.cos(angle) * scaleH/8;
+                        ctx.beginPath();
+                        ctx.moveTo(sx, sy);
+                        ctx.lineTo(sx - scaleW/20, sy - scaleH/8);
+                        ctx.lineTo(sx + scaleW/20, sy - scaleH/8);
+                        ctx.fill();
+                    }
+                    
+                    // Larger curved horns
+                    ctx.fillStyle = '#440000';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ff4400';
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/5, -scaleH/3);
+                    ctx.quadraticCurveTo(-scaleW/3, -scaleH/2, -scaleW/4, -scaleH/1.8);
+                    ctx.lineTo(-scaleW/6, -scaleH/3.2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/5, -scaleH/3);
+                    ctx.quadraticCurveTo(scaleW/3, -scaleH/2, scaleW/4, -scaleH/1.8);
+                    ctx.lineTo(scaleW/6, -scaleH/3.2);
+                    ctx.fill();
+                    
+                    // Glowing eyes with pupils
+                    ctx.fillStyle = '#ffff00';
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#ffff00';
+                    ctx.beginPath();
+                    ctx.ellipse(-scaleW/9, -scaleH/6, scaleW/14, scaleH/10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(scaleW/9, -scaleH/6, scaleW/14, scaleH/10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Red pupils
+                    ctx.fillStyle = '#ff0000';
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(-scaleW/9, -scaleH/6, scaleW/25, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(scaleW/9, -scaleH/6, scaleW/25, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Fanged mouth
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 5;
+                    ctx.beginPath();
+                    ctx.arc(0, scaleH/12, scaleW/7, 0.2, Math.PI - 0.2);
+                    ctx.stroke();
+                    
+                    // Fangs
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(-scaleW/8, scaleH/12);
+                    ctx.lineTo(-scaleW/10, scaleH/5);
+                    ctx.lineTo(-scaleW/12, scaleH/12);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(scaleW/8, scaleH/12);
+                    ctx.lineTo(scaleW/10, scaleH/5);
+                    ctx.lineTo(scaleW/12, scaleH/12);
+                    ctx.fill();
+                    
+                    // Flame particles around body
+                    ctx.shadowBlur = 20;
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2 + animFrame * 2;
+                        const dist = scaleW/2.2 + Math.sin(animFrame * 3 + i) * scaleW/10;
+                        const fx = Math.cos(angle) * dist;
+                        const fy = Math.sin(angle) * dist * 0.7;
+                        
+                        ctx.fillStyle = i % 2 === 0 ? '#ff6600' : '#ffaa00';
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, scaleW/18, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+            
+            // Draw power-ups
+            powerUps.forEach(powerUp => {
+                ctx.save();
+                ctx.translate(powerUp.x, powerUp.y);
+                ctx.rotate(powerUp.rotation);
+                
+                if (powerUp.type === 'gold') {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#ffd700';
+                } else if (powerUp.type === 'mystery') {
+                    // Rainbow/multi-color effect for mystery
+                    const hue = (Date.now() / 10) % 360;
+                    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = ctx.fillStyle;
+                } else if (powerUp.type === 'shield') {
+                    ctx.fillStyle = '#00aaff';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#00aaff';
+                } else if (powerUp.type === 'triple') {
+                    ctx.fillStyle = '#ff0088';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ff0088';
+                } else if (powerUp.type === 'speed') {
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ffaa00';
+                } else if (powerUp.type === 'strength') {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#ff0000';
+                } else if (powerUp.type === 'regen') {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#00ff00';
+                }
+                
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                    const x = Math.cos(angle) * powerUp.size;
+                    const y = Math.sin(angle) * powerUp.size;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            });
+            
+            // Draw Spinosaurus beam BEFORE player (so it appears to come from the dino)
+            if (player && player.type === 'spinosaurus' && beamActive) {
+                const beamX = player.x;
+                const beamY = player.y - player.height/2;
+                const beamWidth = hasTripleShot ? 50 : 25; // Wider with triple shot
+                
+                // Main beam
+                ctx.fillStyle = '#cc66ff';
+                ctx.shadowBlur = hasTripleShot ? 70 : 50; // More glow with triple shot
+                ctx.shadowColor = '#cc66ff';
+                ctx.globalAlpha = 0.8;
+                ctx.fillRect(beamX - beamWidth/2, 0, beamWidth, beamY);
+                
+                // Inner glow
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 30;
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(beamX - beamWidth/4, 0, beamWidth/2, beamY);
+                
+                // Outer glow edges
+                ctx.fillStyle = '#9933ff';
+                ctx.shadowBlur = 40;
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(beamX - beamWidth, 0, beamWidth/3, beamY);
+                ctx.fillRect(beamX + beamWidth * 2/3, 0, beamWidth/3, beamY);
+                
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw player
+            if (player && !gameEnded) {
+                // Trait aura
+                if (player.trait) {
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#ffd700';
+                    ctx.globalAlpha = 0.5;
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, player.width/2 + 15 + Math.sin(Date.now() / 100) * 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.shadowBlur = 0;
+                }
+                
+                drawDino(player.x, player.y, player.width, player.height, player.color, player.secondaryColor, player.tertiaryColor, player.type);
+                
+                if (hasShield) {
+                    ctx.strokeStyle = '#00aaff';
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#00aaff';
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, player.width/2 + 10 + Math.sin(Date.now() / 100) * 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Health bar
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(player.x - 50, player.y - player.height/2 - 35, 100, 10);
+                
+                const healthPercent = player.health / player.maxHealth;
+                const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffaa00' : '#ff0000';
+                ctx.fillStyle = healthColor;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = healthColor;
+                ctx.fillRect(player.x - 50, player.y - player.height/2 - 35, 100 * healthPercent, 10);
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw bullets
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = bullet.color;
+                
+                // BRACHIOSAURUS SLASH - Draw as elongated oval that grows
+                if (bullet.isSlash) {
+                    ctx.save();
+                    ctx.translate(bullet.x, bullet.y);
+                    ctx.rotate(Math.PI / 4); // Rotate for slash effect
+                    ctx.shadowBlur = 30;
+                    ctx.fillStyle = bullet.color;
+                    ctx.shadowColor = bullet.color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, bullet.size / 2, bullet.size * 1.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Add slash trail
+                    ctx.globalAlpha = 0.5;
+                    ctx.strokeStyle = '#88ff88';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(-bullet.size, -bullet.size);
+                    ctx.lineTo(bullet.size, bullet.size);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.restore();
+                } else if (bullet.isBeam) {
+                    // SPINOSAURUS BEAM - Draw as elongated rectangle
+                    ctx.shadowBlur = 40;
+                    ctx.fillStyle = bullet.color;
+                    ctx.shadowColor = bullet.color;
+                    ctx.fillRect(bullet.x - bullet.size / 2, bullet.y - bullet.size, bullet.size, bullet.size * 2);
+                    
+                    // Inner glow
+                    ctx.globalAlpha = 0.6;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(bullet.x - bullet.size / 4, bullet.y - bullet.size, bullet.size / 2, bullet.size * 2);
+                    ctx.globalAlpha = 1;
+                } else {
+                    // Regular bullets
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                if (bullet.poison) {
+                    ctx.strokeStyle = '#00ff66';
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 25;
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.size + 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                ctx.shadowBlur = 0;
+            });
+            
+            // Draw boss
+            if (boss) {
+                drawAlien(boss.x, boss.y, boss.width, boss.height, boss.color, boss.glow, boss.animFrame, true, false, boss.world);
+                
+                if (poisonedEnemies.has(boss.id)) {
+                    ctx.strokeStyle = '#00ff66';
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#00ff66';
+                    ctx.beginPath();
+                    ctx.arc(boss.x, boss.y, boss.width/2 + 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                
+                const barWidth = boss.width * 1.2;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(boss.x - barWidth/2, boss.y - boss.height/2 - 25, barWidth, 8);
+                ctx.fillStyle = '#ff0000';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#ff0000';
+                ctx.fillRect(boss.x - barWidth/2, boss.y - boss.height/2 - 25, barWidth * (boss.health / boss.maxHealth), 8);
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.font = 'bold 20px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ff0000';
+                ctx.fillText(currentWorld === 1 ? '⚠ UFO BOSS ⚠' : '🔥 DEMON BOSS 🔥', boss.x, boss.y - boss.height/2 - 35);
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                drawAlien(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color, enemy.glow, enemy.animFrame, false, enemy.isElite, enemy.world);
+                
+                if (poisonedEnemies.has(enemy.id)) {
+                    ctx.strokeStyle = '#00ff66';
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#00ff66';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x, enemy.y, enemy.width/2 + 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                
+                if (enemy.health < enemy.maxHealth || enemy.isElite) {
+                    const barWidth = enemy.width * 1.2;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.height/2 - 25, barWidth, 8);
+                    ctx.fillStyle = enemy.isElite ? (currentWorld === 1 ? '#ff8800' : '#ffaa00') : '#ff0000';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.height/2 - 25, barWidth * (enemy.health / enemy.maxHealth), 8);
+                    ctx.shadowBlur = 0;
+                }
+            });
+        }
+        
+        function gameLoop() {
+            if (!gameEnded) {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+    </script>
+</body>
+</html>
